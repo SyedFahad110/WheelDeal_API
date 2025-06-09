@@ -1,16 +1,31 @@
 using Microsoft.EntityFrameworkCore;
+using WheelDeal_API;
 using WheelDeal_API.DbContexts;
+using WheelDeal_API.Repositories;
+using WheelDeal_API.Repositories.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddAutoMapper(typeof(MappingConfig));
+builder.Services.AddScoped<DbContext, AppDbContext>();
+builder.Services.AddScoped<ISignUp, SignUpRepository>();
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer("");
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDb")));
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("EnableCORS", builder =>
+    {
+        builder.AllowAnyOrigin()
+        .AllowAnyHeader()
+        .AllowAnyMethod();
+    });
+});
+
 
 var app = builder.Build();
 
@@ -21,7 +36,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
+app.UseCors("EnableCORS");
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
