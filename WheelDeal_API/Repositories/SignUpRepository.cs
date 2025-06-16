@@ -10,48 +10,68 @@ namespace WheelDeal_API.Repositories
     public class SignUpRepository : ISignUp
     {
         private readonly AppDbContext _context;
+
         public SignUpRepository(AppDbContext context)
         {
             _context = context;
         }
+
         public async Task<SignUp> AddAsync(SignUp signup)
         {
-            using (var transaction = _context.Database.BeginTransaction())
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
             {
-                try
-                {
-                    PasswordHasher Password = new PasswordHasher();
+                // ✅ Correctly hash the raw password (not password hash field)
+                signup.PasswordHash = GeneralClass.HashPassword(signup.PasswordHash);
 
-                    //signup.PasswordHash = PasswordHasher.HashPassword(signup.Password);
-                    signup.PasswordHash = PasswordHasher.HashPassword(signup.PasswordHash);
+                // ✅ Encrypt Email and encode as Base64
+                var encryptedEmail = await GeneralClass.EncryptAsync(signup.Email);
+                signup.Email = BitConverter.ToString(encryptedEmail);
 
-                    var EncryptEmail = await GeneralClass.EncryptAsync(signup.Email);
-                    signup.Email = BitConverter.ToString(EncryptEmail);
+                // ✅ Encrypt Phone and encode as Base64
+                byte[] encryptedPhone = await GeneralClass.EncryptAsync(signup.Phone);
+                signup.Phone = Convert.ToBase64String(encryptedPhone);
 
-                    var EncryptContactNo = await GeneralClass.EncryptAsync(signup.Phone);
-                    signup.Phone = BitConverter.ToString(EncryptContactNo);
-
-                    
-                    _context.SignUp?.Add(signup);
-                    await _context.SaveChangesAsync();
-
-                    await transaction.CommitAsync();
-
-                    return signup;
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync();
-                    throw new Exception("Failed to save data. See inner exception for details.", ex);
-                }
+                _context.SignUp.Add(signup);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                //msla kaha aa rha tha
+                //    wait run kar k dhekho shayad thek kar diya tha mainen
+                return signup;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("Failed to save data. See inner exception for details.", ex);
             }
         }
 
         public async Task<List<string>> GetAllEncryptedPhoneAsync()
         {
-            return await _context.SignUp.Where(s => s.IsDeleted == 0 && s.IsActive == 0)
+            return await _context.SignUp
+                .Where(s => s.IsDeleted == 0 && s.IsActive == 0)
                 .Select(s => s.Phone)
                 .ToListAsync();
+        }
+
+        public async Task<List<string>> GetAllEncryptedEmailAsync()
+        {
+            return await _context.SignUp
+                .Where(s => s.IsDeleted == 0 && s.IsActive == 0)
+                .Select(s => s.Email)
+                .ToListAsync();
+        }
+
+        public async Task<SignUp> GetUserByEmail(string email)
+        {
+            var user = await _context.SignUp
+         .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+                return null;
+
+            return user;
         }
     }
 }

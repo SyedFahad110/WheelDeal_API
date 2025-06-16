@@ -27,6 +27,23 @@ namespace BookPlazaAPI.AppClasses
                 return key;
             }
         }
+        public static string HashPassword(string password)
+        {
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(password);
+
+                byte[] hash = sha256.ComputeHash(bytes);
+
+                StringBuilder builder = new StringBuilder();
+                foreach (var b in hash)
+                {
+                    builder.Append(b.ToString("x2"));
+                }
+
+                return builder.ToString();
+            }
+        }
         public static async Task<string> DecryptAsync(byte[] encrypted)
         {
             using Aes aes = Aes.Create();
@@ -49,6 +66,7 @@ namespace BookPlazaAPI.AppClasses
             await cryptoStream.FlushFinalBlockAsync();
             return output.ToArray();
         }
+        
         private static byte[] DeriveKeyFromPassword(string password)
         {
             var emptySalt = Array.Empty<byte>();
@@ -100,7 +118,10 @@ namespace BookPlazaAPI.AppClasses
             return tokenHandler.WriteToken(token);
         }
 
-
+        public static bool IsHexString(string input) //pehly se agr decrypt hogi false return krega 
+        {
+            return input.All(c => "0123456789abcdefABCDEF".Contains(c));
+        }
         public class EmailSettings
         {
             public string? Host { get; set; }

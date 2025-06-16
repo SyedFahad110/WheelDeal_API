@@ -12,6 +12,7 @@ namespace WheelDeal_API.DbContexts
         }
 
         public DbSet<SignUp> SignUp { get; set; }
+        public DbSet<SignInModel> SignInModel { get; set; }
 
     }
 }

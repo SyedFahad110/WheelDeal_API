@@ -8,7 +8,8 @@ namespace WheelDeal_API.Repositories.Interface
     {
         Task<SignUp> AddAsync(SignUp user);
         Task<List<string>> GetAllEncryptedPhoneAsync();
-
+        Task<List<string>> GetAllEncryptedEmailAsync();
+        Task<SignUp> GetUserByEmail(string email);
         //Task<SignUp> GetByIdAsync(int id);
         //Task<SignUp> GetByEmailAsync(string email);
         //Task<bool> EmailExistsAsync(string email);

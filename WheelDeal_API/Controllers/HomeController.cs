@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using BookPlazaAPI.AppClasses;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,19 +18,94 @@ namespace WheelDeal_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class HomeController : ControllerBase
     {
+        private readonly ISignIn _ISigninrepo;
         private readonly ISignUp _ISignUpRepository;
+
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         //private readonly IEmailService _emailService;
-        public HomeController (ISignUp signupRepo,IMapper mapper)
+        public HomeController(ISignIn ISigninrepo, ISignUp signupRepo, IMapper mapper)
         {
+            _ISigninrepo = ISigninrepo;
             _ISignUpRepository = signupRepo;
             _mapper = mapper;
             //_emailService = EService;
         }
+        [AllowAnonymous]
+        [HttpPost("login")]
 
+        public async Task<APIResponse> Login([FromBody] SignInModel signInModel)
+        {
+            var response = new APIResponse();
+
+            try
+            {
+                var encryptedEmails = await _ISignUpRepository.GetAllEncryptedEmailAsync();
+
+                foreach (var encryptedEmail in encryptedEmails)
+                {
+                    string decryptedEmail = null;
+
+                    if (!GeneralClass.IsHexString(encryptedEmail))
+                    {
+                        decryptedEmail = await GeneralClass.DecryptAsync(GeneralClass.HexStringToByteArray(encryptedEmail));
+                    }
+                    else
+                    {
+                        decryptedEmail = encryptedEmail; // already decrypted;
+                    }
+
+                    if (!string.IsNullOrEmpty(decryptedEmail) &&
+                        decryptedEmail.Equals(signInModel.Email, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var user = await _ISignUpRepository.GetUserByEmail(encryptedEmail); // Note: encryptedEmail used here
+                        if (user == null)
+                        {
+                            response.StatusCode = HttpStatusCode.NotFound;
+                            response.IsSuccess = false;
+                            response.ErrorMessages = new List<string> { "User not found." };
+                            return response;
+                        }
+
+                        string hashPass = GeneralClass.HashPassword(signInModel.Password);
+
+                        if (hashPass != user.PasswordHash)
+                        {
+                            response.StatusCode = HttpStatusCode.Unauthorized;
+                            response.IsSuccess = false;
+                            response.ErrorMessages = new List<string> { "Invalid password." };
+                            return response;
+                        }
+
+
+                        response.IsSuccess = true;
+                        response.StatusCode = HttpStatusCode.OK;
+                        response.Result = new { user, decryptedEmail };
+                        response.Messages = new List<string> { "Login successful." };
+                        return response;
+                    }
+                }
+
+                response.StatusCode = HttpStatusCode.NotFound;
+                response.IsSuccess = false;
+                response.ErrorMessages = new List<string> { "No account found for this email." };
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.IsSuccess = false;
+                response.ErrorMessages = new List<string> { ex.Message };
+                return response;
+            }
+        }
+    
+        //null araha hai
+
+        [AllowAnonymous]
         [HttpPost("UserSignup")]
         public async Task<ActionResult<APIResponse>> Signup(DTOSignUp dtoSignUp)
         {
@@ -47,7 +124,18 @@ namespace WheelDeal_API.Controllers
                 }
 
                 //** Existting Email ki condition laga dena yaha
-               
+                var existingEmail = await _ISignUpRepository.GetAllEncryptedEmailAsync();
+                foreach (var encrypted in existingEmail)
+                {
+                    var decryptedEmail = await GeneralClass.DecryptAsync(GeneralClass.HexStringToByteArray(encrypted));
+                    if (decryptedEmail.Equals(dtoSignUp.Email, StringComparison.OrdinalIgnoreCase))
+                    {
+                        response.StatusCode = HttpStatusCode.Conflict; // 409 Conflict
+                        response.IsSuccess = false;
+                        response.ErrorMessages = new List<string> { "Account Already Exist. Please use a different email." };
+                        return Conflict(response);
+                    }
+                }
                 //***************OK
 
                 var existingPhone = await _ISignUpRepository.GetAllEncryptedPhoneAsync();
@@ -69,7 +157,7 @@ namespace WheelDeal_API.Controllers
                 userSignUP.Name = string.IsNullOrWhiteSpace(dtoSignUp.Name) ? "" : dtoSignUp.Name;
 
 
-                userSignUP.PasswordHash = PasswordHasher.HashPassword(dtoSignUp.Password);
+                userSignUP.PasswordHash = dtoSignUp.Password;
 
                 var result = await _ISignUpRepository.AddAsync(userSignUP);
 
