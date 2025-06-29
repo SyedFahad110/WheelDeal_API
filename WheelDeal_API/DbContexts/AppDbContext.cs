@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WheelDeal_API.Models;
 
+
 namespace WheelDeal_API.DbContexts
 {
     public class AppDbContext : DbContext
@@ -13,6 +14,16 @@ namespace WheelDeal_API.DbContexts
 
         public DbSet<SignUp> SignUp { get; set; }
         public DbSet<SignInModel> SignInModel { get; set; }
+
+        public DbSet<BodyType> BodyType { get; set; }
+
+        public DbSet<Brand> Brand { get; set; }
+       
+        public DbSet<Models.DriveType> DriveType { get; set; }
+
+        public DbSet<FuelType> FuelType { get; set; }
+        public DbSet<Model> Model { get; set; }
+
 
     }
 }

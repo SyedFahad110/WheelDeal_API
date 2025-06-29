@@ -10,12 +10,14 @@ namespace WheelDeal_API.Repositories.Interface
         Task<List<string>> GetAllEncryptedPhoneAsync();
         Task<List<string>> GetAllEncryptedEmailAsync();
         Task<SignUp> GetUserByEmail(string email);
-        //Task<SignUp> GetByIdAsync(int id);
+        Task<SignUp> GetUserByIdAsync(int id);
+
         //Task<SignUp> GetByEmailAsync(string email);
         //Task<bool> EmailExistsAsync(string email);
         //Task<IEnumerable<SignUp>> GetAllAsync();
         //Task UpdateAsync(SignUp user);
-        //Task DeleteAsync(int id) << ye bht agy ka kam hy abi
+        /* Task<SignUp> DeleteAsync(int id); *///<< ye bht agy ka kam hy abi
+        Task<bool?> DeleteAsync(int id, string password);
     }
 }
 

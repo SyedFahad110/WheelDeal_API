@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using MimeKit.Cryptography;
 using NETCore.MailKit.Core;
 using System.Net;
 using WheelDeal_API.DbContexts;
@@ -23,18 +24,28 @@ namespace WheelDeal_API.Controllers
     {
         private readonly ISignIn _ISigninrepo;
         private readonly ISignUp _ISignUpRepository;
+        private readonly IBodyType _IBodyTypeRepo;
+        private readonly IBrand _IBrandRepo;
+        private readonly IDriveType _IDriveTypeRepo;
+        private readonly IFuelType _IFuelTypeRepo;
+        private readonly IModels _IModelsRepo;
 
-        private readonly AppDbContext _context;
+        //private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         //private readonly IEmailService _emailService;
-        public HomeController(ISignIn ISigninrepo, ISignUp signupRepo, IMapper mapper)
+        public HomeController(ISignIn ISigninrepo, ISignUp signupRepo, IBodyType IBodyTypeRepo, IBrand IBrandRepo, IDriveType IDriveTypeRepo, IFuelType IFuelTypeRepo, IModels IModelsRepo, IMapper mapper)
         {
             _ISigninrepo = ISigninrepo;
             _ISignUpRepository = signupRepo;
+            _IBodyTypeRepo  = IBodyTypeRepo;
+            _IBrandRepo = IBrandRepo;
+            _IDriveTypeRepo = IDriveTypeRepo;
+            _IFuelTypeRepo = IFuelTypeRepo;
+            _IModelsRepo = IModelsRepo;
             _mapper = mapper;
             //_emailService = EService;
         }
-        [AllowAnonymous]
+
         [HttpPost("login")]
 
         public async Task<APIResponse> Login([FromBody] SignInModel signInModel)
@@ -80,10 +91,10 @@ namespace WheelDeal_API.Controllers
                             return response;
                         }
 
-
+                        string token = GeneralClass.GenerateJwtToken();
                         response.IsSuccess = true;
                         response.StatusCode = HttpStatusCode.OK;
-                        response.Result = new { user, decryptedEmail };
+                        response.Result = new { user, decryptedEmail, jwtToken = token };
                         response.Messages = new List<string> { "Login successful." };
                         return response;
                     }
@@ -102,16 +113,13 @@ namespace WheelDeal_API.Controllers
                 return response;
             }
         }
-    
+
         //null araha hai
 
-        [AllowAnonymous]
         [HttpPost("UserSignup")]
         public async Task<ActionResult<APIResponse>> Signup(DTOSignUp dtoSignUp)
         {
             var response = new APIResponse();
-
-
 
             try
             {
@@ -154,10 +162,8 @@ namespace WheelDeal_API.Controllers
                 // Map DTO to entity
                 var userSignUP = _mapper.Map<SignUp>(dtoSignUp);
 
-                userSignUP.Name = string.IsNullOrWhiteSpace(dtoSignUp.Name) ? "" : dtoSignUp.Name;
+                //userSignUP.Name = string.IsNullOrWhiteSpace(dtoSignUp.Name) ? "" : dtoSignUp.Name; ye 
 
-
-                userSignUP.PasswordHash = dtoSignUp.Password;
 
                 var result = await _ISignUpRepository.AddAsync(userSignUP);
 
@@ -208,5 +214,95 @@ namespace WheelDeal_API.Controllers
 
             return Ok(response);
         }
+
+        [HttpGet("GetBodyType")] 
+        public async Task<IActionResult> GetAllBodyTypes()
+        {
+            var bodytypes = await _IBodyTypeRepo.GetBodyTypesAsync();
+            return Ok(bodytypes);
+
+        }
+
+        [HttpGet("GetBrand")]
+
+        public async Task<IActionResult> GetAllBrand()
+        {
+            var brand = await _IBrandRepo.GetAllBrandAsync();
+
+            return Ok(brand);
+        }
+
+        [HttpGet("GetDriveType")]
+        public async Task<IActionResult> GetAllDriveTypes()
+        {
+            var drivetype = await _IDriveTypeRepo.GetDriveTypes();
+
+            return Ok(drivetype);
+        }
+
+        [HttpGet("GetFuelType")]
+
+        public async Task<IActionResult> GetAllFuelTypes()
+        {
+            var fueltype = await _IFuelTypeRepo.GetAllFuelType();
+
+            return Ok(fueltype);
+        }
+
+        [HttpGet("GetCarModels")]
+
+        public async Task<IActionResult> GetAllModels()
+        {
+            var models = await _IModelsRepo.GetAllModel();
+
+            return Ok(models);
+        }
+
+        [HttpGet("GetUserById")]
+        public async Task<IActionResult> GetUserById(int id)
+        {
+
+            var user = await _ISignUpRepository.GetUserByIdAsync(id);
+
+            if (user == null)
+                return NotFound();
+
+                return Ok(user);
+        }
+
+        [HttpDelete("DeleteUser")]
+        public async Task<ActionResult<APIResponse>> DeleteUser(int id, string password)
+        {
+            var response = new APIResponse();
+
+            try
+            {
+                string hasPass = GeneralClass.HashPassword(password);
+
+                var result = await _ISignUpRepository.DeleteAsync(id, hasPass);
+
+                if (result == null)
+                {
+                    response.StatusCode = HttpStatusCode.Conflict; 
+                    response.IsSuccess = false;
+                    response.ErrorMessages = new List<string> { "User not found or password incorrect." };
+                    return Conflict(response);
+                }
+
+                response.StatusCode = HttpStatusCode.OK;
+                response.IsSuccess = true;
+                response.ErrorMessages = new List<string> { "User marked as deleted successfully." };
+            }
+            catch (Exception ex)
+            {
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.ErrorMessages = new List<string> { ex.Message };
+                return StatusCode((int)HttpStatusCode.InternalServerError, response);
+            }
+
+            return Ok(response);
+        }
     }
+    
 }

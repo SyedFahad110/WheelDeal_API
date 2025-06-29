@@ -30,8 +30,8 @@ namespace WheelDeal_API.Repositories
                 signup.Email = BitConverter.ToString(encryptedEmail);
 
                 // ✅ Encrypt Phone and encode as Base64
-                byte[] encryptedPhone = await GeneralClass.EncryptAsync(signup.Phone);
-                signup.Phone = Convert.ToBase64String(encryptedPhone);
+                var encryptedPhone = await GeneralClass.EncryptAsync(signup.Phone);
+                signup.Phone = BitConverter.ToString(encryptedPhone);
 
                 _context.SignUp.Add(signup);
                 await _context.SaveChangesAsync();
@@ -72,6 +72,29 @@ namespace WheelDeal_API.Repositories
                 return null;
 
             return user;
+        }
+
+        public async Task<SignUp> GetUserByIdAsync(int id)
+        {
+            var user = await _context.SignUp.FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null)
+                return null;
+            return user;
+        }
+
+        public async Task<bool?> DeleteAsync(int id, string password)
+        {
+            var user = await _context.SignUp
+       .FirstOrDefaultAsync(u => u.Id == id && u.PasswordHash == password && u.IsDeleted == 0);
+
+            if (user == null)
+                return null;
+
+            user.IsDeleted = 1;
+            await _context.SaveChangesAsync();
+
+            return true;
         }
     }
 }

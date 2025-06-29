@@ -100,17 +100,17 @@ namespace BookPlazaAPI.AppClasses
 
             return byteArray;
         }
-        public static string GenerateJwtToken(string userName, string email, string userType)
+        public static string GenerateJwtToken()
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(SecretKey);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                new Claim(ClaimTypes.Name, userName),
-                new Claim(ClaimTypes.Email, email)
-                }),
+                //Subject = new ClaimsIdentity(new Claim[]
+                //{
+                //new Claim(ClaimTypes.Name, userName),
+                //new Claim(ClaimTypes.Email, email)
+                //}),
                 Expires = DateTime.UtcNow.AddHours(12),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
