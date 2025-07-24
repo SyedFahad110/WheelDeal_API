@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using MimeKit.Cryptography;
 using NETCore.MailKit.Core;
 using System.Net;
+using System.Runtime.CompilerServices;
 using WheelDeal_API.DbContexts;
 using WheelDeal_API.Models;
 using WheelDeal_API.Repositories;
@@ -29,11 +30,18 @@ namespace WheelDeal_API.Controllers
         private readonly IDriveType _IDriveTypeRepo;
         private readonly IFuelType _IFuelTypeRepo;
         private readonly IModels _IModelsRepo;
+        private readonly IYear _IYearRepo;
+        private readonly ICondition _IConditionRepo;
+        private readonly ICarColors _ICarColorsRepo;
+        private readonly ICarCylinders _ICarCylindersRepo;
+        private readonly ITransmission _ITransmissionRepo;
+        private readonly IFeatures _IFeaturesRepo;
+        
 
         //private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         //private readonly IEmailService _emailService;
-        public HomeController(ISignIn ISigninrepo, ISignUp signupRepo, IBodyType IBodyTypeRepo, IBrand IBrandRepo, IDriveType IDriveTypeRepo, IFuelType IFuelTypeRepo, IModels IModelsRepo, IMapper mapper)
+        public HomeController(ISignIn ISigninrepo, ISignUp signupRepo, IBodyType IBodyTypeRepo, IBrand IBrandRepo, IDriveType IDriveTypeRepo, IFuelType IFuelTypeRepo, IModels IModelsRepo, IMapper mapper, IYear IYearRepo, ICondition IConditionRepo, ICarColors ICarColorsRepo, ICarCylinders ICarCylindersRepo, ITransmission ITransmissionRepo, IFeatures IFeaturesRepo)
         {
             _ISigninrepo = ISigninrepo;
             _ISignUpRepository = signupRepo;
@@ -42,6 +50,12 @@ namespace WheelDeal_API.Controllers
             _IDriveTypeRepo = IDriveTypeRepo;
             _IFuelTypeRepo = IFuelTypeRepo;
             _IModelsRepo = IModelsRepo;
+            _IYearRepo = IYearRepo;
+            _IConditionRepo = IConditionRepo;
+            _ICarColorsRepo = ICarColorsRepo;
+            _ICarCylindersRepo = ICarCylindersRepo;
+            _ITransmissionRepo = ITransmissionRepo;
+            _IFeaturesRepo = IFeaturesRepo;
             _mapper = mapper;
             //_emailService = EService;
         }
@@ -268,6 +282,61 @@ namespace WheelDeal_API.Controllers
                 return NotFound();
 
                 return Ok(user);
+        }
+
+
+        [HttpGet("GetCondition")]
+
+        public async Task<IActionResult> GetCondition()
+        {
+            var condition = await _IConditionRepo.GetConditionsAsync();
+            return Ok(condition);
+
+               
+        }
+
+        [HttpGet("GetAllYear")]
+
+        public async Task<IActionResult> GetAllYear()
+        {
+            var Year = await _IYearRepo.GetAllYearAsync();
+            return Ok(Year);
+        }
+
+        [HttpGet("GetAllCarColors")]
+
+        public async Task<IActionResult> GetCarColors()
+        {
+            var colors = await _ICarColorsRepo.GetAllCarColorsAsync();
+
+            return Ok(colors);
+        }
+
+
+        [HttpGet("GetAllCarCylinder")]
+
+        public async Task<IActionResult> GetAllCylinders()
+        {
+            var cylinders = await _ICarCylindersRepo.GetAllCarCylinders();
+            return Ok(cylinders);
+        }
+
+        [HttpGet("GetAllFeatures")]
+
+        public async Task<IActionResult> GetAllFeature()
+        {
+            var features = await _IFeaturesRepo.GetAllFeatures();
+                return Ok(features);
+          
+        }
+
+        [HttpGet("GetTransmission")]
+
+        public async Task<IActionResult> GetAllTransmission()
+        {
+            var transmission = await _ITransmissionRepo.GetTransmissionsAsync();
+
+            return Ok(transmission);
         }
 
         [HttpDelete("DeleteUser")]

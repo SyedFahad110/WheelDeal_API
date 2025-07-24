@@ -19,12 +19,23 @@ builder.Services.AddScoped<IBrand, BrandRepository>();
 builder.Services.AddScoped<IDriveType, DriveTypeRepository>();
 builder.Services.AddScoped<IFuelType, FuelTypeRepository>();
 builder.Services.AddScoped<IModels, ModelRepository>();
+builder.Services.AddScoped<IYear, YearRepository>();
+builder.Services.AddScoped<ICondition, ConditionRepository>();
+builder.Services.AddScoped<ICarColors, CarColorsRepository>();
+builder.Services.AddScoped<ICarCylinders, CarCylindersRepository>();
+builder.Services.AddScoped<ITransmission, TransmissionRepository>();
+builder.Services.AddScoped<IFeatures, FeaturesRepository>();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("AppDb")));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
 
 builder.Services.AddCors(options =>
 {
@@ -40,18 +51,20 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
+
 
 app.UseCors("EnableCORS");
+
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapRazorPages();
 
 app.Run();

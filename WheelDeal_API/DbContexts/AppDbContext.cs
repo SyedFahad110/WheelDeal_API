@@ -23,6 +23,12 @@ namespace WheelDeal_API.DbContexts
 
         public DbSet<FuelType> FuelType { get; set; }
         public DbSet<Model> Model { get; set; }
+        public DbSet<Year> Year { get; set; }
+        public DbSet<Condition> Condition { get; set; }
+        public DbSet<CarCylinders> CarCylinders { get; set; }
+        public DbSet<CarColors> CarColors { get; set; }
+        public DbSet<Transmission> Transmission { get; set; }
+        public DbSet<Features> Features { get; set; }
 
 
     }
